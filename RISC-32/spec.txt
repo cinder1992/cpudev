@@ -1,0 +1,106 @@
+RISC machine
+Design specs:
+Von-Neuman archetecture
+32-bit memory width and adress space
+74181-type ALU
+classic RISC pipeline
+Interrupt-capable
+-------------------------------------------------------------------------------
+Instructions:
+Opcode | Function
+0x0    | ALU
+0x1    | ALU C
+0x2    | LW
+0x3    | SW
+0x4    | JLR
+0x5    | BRA
+0x6    | SHFT
+0x7    | UNDEF
+
+Instruction format
+
+| 31-29 | 28-24 | 23-20 | 19-16 | 15-12 | 11-0 |
+| Opcod | ALU I | Reg A | Reg B | Reg C | IMMD |
+-------------------------------------------------------------------------------
+Instruction functions:
+ALU:
+ALU output is written to Reg C, without altering ALU Flags
+
+ALU C:
+ALU output is written to Reg C, altering ALU Flags
+
+LW:
+ALU output address is loaded into Reg C
+
+SW:
+ALU output address is stored with the contents of Reg C w/ writeback inhibit
+
+JLR:
+Pipeline is turned OFF
+ALU output is jumped to, while PC is stored in Reg C
+Pipeline is turned ON
+
+BEQ:
+Pipeline is turned OFF
+IMMD is added to PC if ALU EQ line is TRUE, while PC is stored in Reg C
+Pipeline is turned ON
+
+-------------------------------------------------------------------------------
+Notes:
+- IMMD is ORd with the B input of the ALU, except when BEQ is used.
+- IMMD is Sign-Extended when used in BEQ
+- Register r0 is explicitly NUL, and cannot be loaded to
+- Register r14 is used as the Interrupt Vector and return, the system will 
+  execute JLR r14, 0, 0 -> r14 upon receiving an interrupt
+- Register r15 is the I/O register, writing to it outputs to the IO bus,
+  reading reads from the IO bus
+- Interrupts are ALWAYS enabled, use an IO device to toggle them with external
+  hardware.
+- ALU I is the 74181 instruction passed to the ALU
+- BEQ can be enhanced to BLT and BGT using various ALU instructions
+- MOV is acheved via instructing the ALU to output A or B
+-------------------------------------------------------------------------------
+Common Macros:
+MOV  x(r) -> y(r):        ALU 0b11111, x, 0, -> y
+MOVi x(i) -> y(r):        ALU 0b11010, 0, 0, x -> y
+ADD  x(r), y(r) -> z(r):  ALU 0b01001, x, y, 0 -> z
+ADDi x(r), y(i) -> z(r):  ALU 0b01001, x, 0, y -> z
+
+Example program (Fibonacci numbers):
+MOV 0 -> r15
+MOVi 1 -> r1
+MOVi 2 -> r2
+MOVi 0xA18 -> r3
+MOVi Int -> r14
+loop:
+MOV r1 -> r15
+ADD r1, r2 -> r1
+BEQ r15, r3, hang
+MOV r2 -> r15
+ADD r1, r2 -> r2
+BEQ r15, r3, hang
+JLR loop
+hang:
+BEQ 0, 0, 0
+Int:
+JLR 0
+
+Compiled:
+0x0 0x1F00F000
+0x1 0x1A001001
+0x2 0x1A002001
+0x3 0x1A003A18
+0x4 0x1A00E00D
+0x5 0x1F10F000
+0x6 0x09121000
+0x7 0xA63F0005
+0x8 0x1F20F000
+0x9 0x09122000
+0xA 0xA63F0002
+0xB 0x9A000005
+0xC 0xA6000000
+0xD 0x9A000000
+
+
+
+

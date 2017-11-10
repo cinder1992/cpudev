@@ -1,0 +1,73 @@
+unsigned_loadmask = 0x00000FFF
+rotmask = 0x00000FFE
+loadmask = 0x00001000
+
+start:00
+  r1 = 1
+  r8 = loadmask
+  r9 = rotmask
+
+start:00
+  r2 = 1
+  r3 = 2
+
+for:
+  r10 = 1000
+  pc = for_end ? r2 > r10 ; FOR N=1 TO 1000
+for2:
+  r10 = 500
+  pc = for2_end ? r3 > r10 ; FOR K=2 TO 500
+  r4 = r2
+  r5 = r3
+  pc, r12 = div ; LET M=N/K
+  pc = L230 ? r4 == 0 ; IF L=0 THEN 230
+  pc = L220 ? r4 == 1 ; IF L=1 THEN 220
+  pc = L220 ? r5 > 0 ;  IF M>0 THEN 220
+  pc = L240 ? r5 == 0 ; IF M=0 THEN 240
+
+L220:
+  r3 = r3 + 1
+  pc = for2 ; NEXT K
+for2_end:
+L230:
+  r15 = r2 ; PRINT N
+L240:
+  r2 = r2 + 1
+  pc = for ; NEXT N
+for_end:
+  r15 = 0xFFF ; End of benchark
+hang:
+  pc = hang
+
+div: 
+  ; Implements 12-bit unsigned division
+  ; r4 = dividend and result, r5 = divisor and remainder, r7,r11 = scratch, r12 is return address
+
+  r12 = r12 + 1
+  r13 = 12 ; counter
+
+loop:
+  pc = div_end ? r13 == 0 
+  c = r1 + 0xFFF ; Set the carry so we can do subtraction
+
+  r4 = r4 << 1
+  r7 = r7 << 1
+  r11 = r4 && r8
+  r4 = r4 && r9
+  r11 = r11 >> 12
+  r7 = r11 || r7
+  r11 = r7
+  ; setting the carry in this instruction will actually detect if the result was positive or negative
+  ; a negative result will reset the carry, therefore changing how the BRA instruction works!
+  r11,c = r11 - r5
+  pc = negative ? 0 == 0 ; will fail if carry is unset!
+  r7 = r11
+  r4 = r4 || 1
+negative:
+  c = r1 + 0xFFF ; set the carry again
+  r13 = r13 - 1
+  c = 0          ; reset the carry so we can do comparisons
+  pc = loop
+div_end:
+  r5 = r7
+  pc = r12

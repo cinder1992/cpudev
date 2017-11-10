@@ -1,0 +1,104 @@
+
+
+REGISTERS:
+A: ALU A
+B: ALU B
+C: ALU Output (Latched on ALU instruction)
+F: Flags (M, E, C, I)
+
+Interal regs:
+Phl
+Dhl
+Ihl
+IR
+AR
+
+Busses:
+NAME  |           CONS          | DESC
+--------------------------------------
+DATA  | AR- Dl A B F S+ C- ADDR | 4-bit Data bus
+ADL   | Dl- Pl Il               | 4-bit Address bus (Low of 12-bit bus)
+ADH   | PH IH                   | 8-bit Address bus (High of 12-bit bus)
+WIDE  | ADH Dhl                 | 8-bit Data bus
+Dx    | Dhl                     | External 8-bit Data Bus
+Ax    | ALATCH                  | External 12-bit Data Bus
+
+0x0 NOP       NOP
+0x1 ALU       ALU-A
+0x2 STA (x)   ALU-B
+0x3 STB (x)   STA (x)
+0x4 LDA x     LDA (x)
+0x5 LDB x     LDA x
+0x6 LDA (x)   JE x
+0x7 LDB (x)   JC x
+0x8 JEQ x     CALL x
+0x9 JCR x     XAF
+0xA LBC       SAH (x)
+0xB XBA       LAH (x)
+0xC XAF       PSH
+0xD XBF       POP
+0xE LAH       XSP x
+0xF SAH       RET
+
+Example code (Prints a message to a Logisim TTY)
+
+START:
+  LDA 2       ; 0x42
+  XAF         ; 0xC0
+  LAH (0x030) ; 0xE0 0x03
+  LDB 0       ; 0x50
+  ALU 0x6     ; 0x16
+  JEQ END     ; 0x80 0x02
+  SAH (0xFFF) ; 0xFF FF   (Altered to SAH 0xFFE)
+  LDA (0x030) ; 0x60 0x03
+  STA (0xFFE) ; 0x2E 0xFF (NOP'd out)
+  STA (0xFFF) ; 0x2F 0xFF (NOP'd out)
+  STA (0xFFE) ; 0x2E 0xFF
+  LDA (0x003) ; 0x53 0x00
+  LDB 0       ; 0x50
+  XBF         ; 0xD0
+  ALU 0       ; 0x10
+  LBC         ; 0xA0
+  STB (0x003) ; 0x33 0x00
+  STB (0x00B) ; 0x3A 0x00
+  LDA 4       ; 0x44
+  XAF         ; 0xC0
+  JEQ START   ; 0x80 0x00
+
+END:
+  LDA 4       ; 0x44
+  XAF         ; 0xC0
+HANG:
+  JEQ HANG    ; 0x82 02
+
+Data:
+*=0x030
+DH 48 65 6c 6c 6f 2c 20 57 6f 72 6c 64 21 00
+
+
+CPU Internal instructions:                XFR SPEC  ADDRi   MEMi        ALUi
+0x00 Ihl++;                               000 00000 1000000 00000000000 0000000 0x01000000 0x0
+0x01 A -> Dh;                             001 00000 0000000 00000001010 0001000 0x40000508 0x0
+0x02 A -> Dl;                             001 00000 1000000 00000000110 0001000 0x40000308 0x0
+0x03 ALU -> C, ALU -> F;                  000 00000 0000000 00000000000 1100100 0x00000064 0x0
+0x04 AR -> A;                             101 00000 0000000 10100000000 0000001 0x40028001 0x1
+0x05 AR -> B;                             101 00000 0000000 10100000000 0000010 0x40028002 0x1
+0x06 AR -> Pl;                            101 00000 0000100 10100000000 0001000 0x40128008 0x1
+0x07 AR -> S;                             101 00000 0000000 10100000000 0010000 0x40028010 0x1
+0x08 B -> A;                              010 00000 0000000 00000000000 0000001 0x80000001 0x0
+0x09 B -> Dl;                             010 00000 0000000 00000000110 0001000 0x80000308 0x0
+0x0A C -> B;                              011 00000 0000000 00000000000 0000010 0xC0000002 0x0
+0x0B Dh -> A;                             101 00000 0000000 10010000000 0000001 0x00001E00 0x0
+0x0C Dhl -> IRAR;                         000 00000 0000000 00000110000 0000000 0x00001800 0x0
+0x0D Dhl -> Ph;                           000 00000 0001000 01000000000 0000000 0x00210000 0x0
+0x0E Dl -> A;                             101 00000 0000000 10001000000 0000001 0x40022001 0x1
+0x0F Dl -> B;                             101 00000 0000000 10001000000 0000010 0x40022002 0x1
+0x10 Dl -> F;                             101 00000 0000000 10001000000 0100000 0x40022020 0x1
+0x11 F -> A;                              100 00000 0000000 00000000000 0000001 0x00000001 0x1
+0x12 F -> B;                              100 00000 0000000 00000000000 0000010 0x00000002 0x1
+0x13 IFC(Phl -> Ihl);                     000 00010 0100000 00000000000 0000000 0x04800000 0x0
+0x14 IFE(Phl -> Ihl);                     000 00001 0100000 00000001101 0000000 0x02800000 0x0
+0x15 Ihl -> [Ax], Din;                    000 00100 0010000 00000001101 0000000 0x08400680 0x0
+0x16 Phl -> [Ax], Dhl -> [Dx], Dout;      000 01000 0100000 01000000000 0000000 0x10810000 0x0 
+0x17 Phl -> [Ax], Din;                    000 00100 0100000 00000001101 0000000 0x08800680 0x0 
+0x18 RESET;                               000 10000 0000000 00000000000 0000000 0x20000000 0x0 

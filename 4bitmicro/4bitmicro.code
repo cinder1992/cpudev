@@ -1,0 +1,116 @@
+IL: 
+  Ihl++;
+  Ihl -> Ax, Din;
+  Dhl -> IRAR;
+  
+NOP:
+  RESET;
+
+ALU:
+  AR -> S;
+  ALU -> C, ALU -> F;
+  RESET;
+  
+STA (x):
+  Ihl++;
+  AR -> Pl;
+  Ihl -> [Ax], Din;
+  Dhl -> Ph;
+  Phl -> [Ax], Din;
+  A -> Dl;
+  Phl -> [Ax], Dhl -> [Dx], Dout;
+  RESET;
+  
+STB (x):
+  Ihl++;
+  AR -> Pl;
+  Ihl -> [Ax], Din;
+  Dhl -> Ph;
+  Phl -> [Ax], Din;
+  B -> Dl;
+  Phl -> [Ax], Dhl -> [Dx], Dout;
+  RESET;
+  
+LDA x:
+  AR -> A;
+  RESET;
+  
+LDB x:
+  AR -> B;
+  RESET;
+
+LDA (x): 
+  Ihl++;
+  AR -> Pl;
+  Ihl -> [Ax], Din;
+  Dhl -> Ph;
+  Phl -> [Ax], Din;
+  Dl -> A;  
+  RESET;
+
+  
+LDB (x):
+  Ihl++;
+  AR -> Pl;
+  Ihl -> [Ax], Din;
+  Dhl -> Ph;
+  Phl -> [Ax], Din;
+  Dl -> B;  
+  RESET;
+
+JEQ:
+  Ihl++;
+  AR -> Pl;
+  Ihl -> [Ax], Din;
+  Dhl -> Ph;
+  IFE(Phl -> Ihl);
+  RESET;
+  
+JCR: 
+  Ihl++;
+  AR -> Pl;
+  Ihl -> [Ax], Din;
+  Dhl -> Ph;
+  IFC(Phl -> Ihl);
+  RESET;
+
+LBC:
+  C -> B;
+  RESET;
+  
+XBA:
+  A -> Dl;
+  B -> A;
+  Dl -> B;
+  RESET;
+  
+XAF:
+  A -> Dl;
+  F -> A;
+  Dl -> F;
+  RESET;
+  
+XBF:
+  B -> Dl;
+  F -> B;
+  Dl -> F;
+  RESET;
+
+LAH (x):
+  Ihl++;
+  AR -> Pl;
+  Ihl -> [Ax], Din;
+  Dhl -> Ph;
+  Phl -> [Ax], Din;
+  Dh -> A;  
+  RESET;
+
+SAH (x):
+  Ihl++;
+  AR -> Pl;
+  Ihl -> [Ax], Din;
+  Dhl -> Ph;
+  Phl -> [Ax], Din;
+  A -> Dh;
+  Phl -> [Ax], Dhl -> [Dx], Dout;
+  RESET;

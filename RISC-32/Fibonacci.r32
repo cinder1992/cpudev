@@ -1,0 +1,17 @@
+  OUT = 0
+  r1 = 1
+  r2 = 2
+  r3 = 0xA18
+  r14 = Int
+loop:
+  OUT=r1
+  r1 = r1 + r2
+  pc = hang ? r15 > r3 
+  OUT = r2
+  r2 = r1 + r2
+  pc = hang ? r15 > r3
+  pc = loop
+hang:
+  pc = hang
+Int:
+  pc = 0
